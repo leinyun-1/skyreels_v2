@@ -14,6 +14,10 @@ from skyreels_v2_infer.pipelines import PromptEnhancer
 from skyreels_v2_infer.pipelines import resizecrop
 from skyreels_v2_infer.pipelines import Text2VideoPipeline
 
+
+import torch._dynamo
+torch._dynamo.config.suppress_errors = True
+
 MODEL_ID_CONFIG = {
     "text2video": [
         "Skywork/SkyReels-V2-T2V-14B-540P",
@@ -32,7 +36,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", type=str, default="video_out")
     parser.add_argument("--model_id", type=str, default="Skywork/SkyReels-V2-T2V-14B-540P")
-    parser.add_argument("--resolution", type=str, choices=["540P", "720P"])
+    parser.add_argument("--resolution", type=str, choices=["540P", "720P",'832'])
     parser.add_argument("--num_frames", type=int, default=97)
     parser.add_argument("--image", type=str, default=None)
     parser.add_argument("--guidance_scale", type=float, default=6.0)
@@ -42,6 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--offload", action="store_true")
     parser.add_argument("--fps", type=int, default=24)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument(
         "--prompt",
         type=str,
@@ -74,6 +79,9 @@ if __name__ == "__main__":
     elif args.resolution == "720P":
         height = 720
         width = 1280
+    elif args.resolution == '832':
+        height = 832
+        width = 832
     else:
         raise ValueError(f"Invalid resolution: {args.resolution}")
 
@@ -118,18 +126,27 @@ if __name__ == "__main__":
         assert "I2V" in args.model_id, f"check model_id:{args.model_id}"
         print("init img2video pipeline")
         pipe = Image2VideoPipeline(
-            model_path=args.model_id, dit_path=args.model_id, use_usp=args.use_usp, offload=args.offload
+            model_path=args.model_id, dit_path=args.model_id, use_usp=args.use_usp, offload=args.offload, device=args.device
         )
         args.image = load_image(args.image)
         image_width, image_height = args.image.size
         if image_height > image_width:
             height, width = width, height
-        args.image = resizecrop(args.image, height, width)
+        #args.image = resizecrop(args.image, height, width)
+        from PIL import Image
+        args.image = args.image.resize((width, height))
+        ## 如何将图片的背景置为黑色
 
     if args.teacache:
         pipe.transformer.initialize_teacache(enable_teacache=True, num_steps=args.inference_steps, 
                                              teacache_thresh=args.teacache_thresh, use_ret_steps=args.use_ret_steps, 
                                              ckpt_dir=args.model_id)
+    
+    from tasks.utils import load_lora
+    lora_path = 'tasks_out/train_exp/0731_wan_i2v_lora_thuman_round/lightning_lora_ckpts/lora-epoch=18-step=004000.ckpt'
+    lora_state_dict = torch.load(lora_path, map_location="cpu") 
+    load_lora(pipe.transformer, lora_state_dict)
+
         
 
     kwargs = {

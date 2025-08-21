@@ -449,6 +449,6 @@ class T5EncoderModel(ModelMixin):
         mask = mask.to(self.device)
         # seq_lens = mask.gt(0).sum(dim=1).long()
         context = self.model(ids, mask)
-        context = context * mask.unsqueeze(-1).cuda()
+        context = context * mask.unsqueeze(-1)#.cuda()
 
         return context

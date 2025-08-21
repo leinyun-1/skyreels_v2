@@ -431,7 +431,7 @@ class DiffusionForcingPipeline:
         fps_embeds = [0 if i == 16 else 1 for i in fps_embeds]
         transformer_dtype = self.transformer.dtype
         # with torch.cuda.amp.autocast(dtype=self.transformer.dtype), torch.no_grad():
-        if overlap_history is None or base_num_frames is None or num_frames <= base_num_frames:
+        if 1: #overlap_history is None or base_num_frames is None or num_frames <= base_num_frames:
             # short video generation
             latent_shape = [16, latent_length, latent_height, latent_width]
             latents = self.prepare_latents(
@@ -444,7 +444,7 @@ class DiffusionForcingPipeline:
             if end_video is not None:
                 latents[0] = torch.cat([latents[0], end_video[0].to(transformer_dtype)], dim=1)
 
-            base_num_frames = num_frames
+            #base_num_frames = num_frames # 为了废掉滑动窗口？
             base_num_frames = (base_num_frames - 1) // 4 + 1 if base_num_frames is not None else latent_length
             if end_video is not None:
                 base_num_frames += end_video_latent_length
@@ -467,6 +467,7 @@ class DiffusionForcingPipeline:
                 sample_schedulers.append(sample_scheduler)
             sample_schedulers_counter = [0] * latent_length
             self.transformer.to(self.device)
+            print(step_matrix.shape)
             for i, timestep_i in enumerate(tqdm(step_matrix)):
                 update_mask_i = step_update_mask[i]
                 valid_interval_i = valid_interval[i]

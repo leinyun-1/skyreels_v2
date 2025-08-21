@@ -27,7 +27,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", type=str, default="diffusion_forcing")
     parser.add_argument("--model_id", type=str, default="Skywork/SkyReels-V2-DF-1.3B-540P")
-    parser.add_argument("--resolution", type=str, choices=["540P", "720P"])
+    parser.add_argument("--resolution", type=str, choices=["540P", "720P","480P"])
     parser.add_argument("--num_frames", type=int, default=97)
     parser.add_argument("--image", type=str, default=None)
     parser.add_argument("--end_image", type=str, default=None)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         help="Using Retention Steps will result in faster generation speed and better generation quality.")
     args = parser.parse_args()
 
-    args.model_id = download_model(args.model_id)
+    #args.model_id = download_model(args.model_id)
     print("model_id:", args.model_id)
 
     assert (args.use_usp and args.seed is not None) or (not args.use_usp), "usp mode need seed"
@@ -77,6 +77,9 @@ if __name__ == "__main__":
     elif args.resolution == "720P":
         height = 720
         width = 1280
+    elif args.resolution == "480P":
+        height = 480
+        width = 832
     else:
         raise ValueError(f"Invalid resolution: {args.resolution}")
 

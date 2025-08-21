@@ -16,9 +16,9 @@ from torch.nn.attention.flex_attention import flex_attention
 from .attention import flash_attention
 
 
-flex_attention = torch.compile(flex_attention, dynamic=False, mode="max-autotune")
+#flex_attention = torch.compile(flex_attention, dynamic=False, mode="max-autotune")  # 怎么会有这种残代码？明明引入了为什么不用呢？ 下文还是用了普通的 scaled_dot_product_attention
 
-DISABLE_COMPILE = False  # get os env
+DISABLE_COMPILE = True  # get os env 
 
 __all__ = ["WanModel"]
 
@@ -619,7 +619,7 @@ class WanModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
                 self.ret_steps = 1*2
                 self.cutoff_steps = num_steps*2 - 2
 
-    def forward(self, x, t, context, clip_fea=None, y=None, fps=None):
+    def forward(self, x, t, context, clip_fea=None, y=None, fps=None, use_gradient_checkpointing=False, use_gradient_checkpointing_offload=False):
         r"""
         Forward pass through the diffusion model
 
@@ -656,7 +656,7 @@ class WanModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
         grid_sizes = torch.tensor(x.shape[2:], dtype=torch.long)
         x = x.flatten(2).transpose(1, 2)
 
-        if self.flag_causal_attention:
+        if self.flag_causal_attention: # 明明flex attention 、 block mask 代码都准备好，还是选择了普通的方式
             frame_num = grid_sizes[0]
             height = grid_sizes[1]
             width = grid_sizes[2]
@@ -764,8 +764,28 @@ class WanModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
             if self.cnt >= self.num_steps:
                 self.cnt = 0
         else:
+            def create_custom_forward(module):
+                def custom_forward(*inputs):
+                    return module(*inputs)
+                return custom_forward
+            
             for block in self.blocks:
-                x = block(x, **kwargs)
+                if use_gradient_checkpointing:
+                    if use_gradient_checkpointing_offload:
+                        with torch.autograd.graph.save_on_cpu():
+                            x = torch.utils.checkpoint.checkpoint(
+                                create_custom_forward(block),
+                                x, e0, grid_sizes, self.freqs, context, self.block_mask,
+                                use_reentrant=False
+                            )
+                    else:
+                        x = torch.utils.checkpoint.checkpoint(
+                            create_custom_forward(block),
+                            x, e0, grid_sizes, self.freqs, context, self.block_mask,
+                            use_reentrant=False
+                        )
+                else:
+                    x = block(x, **kwargs)
 
         x = self.head(x, e)
 

@@ -18,3 +18,5 @@ scripts/.gradio/*
 out/*
 model/
 run.sh
+tasks_out/
+result/
