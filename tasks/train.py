@@ -217,15 +217,15 @@ def train(args):
 if __name__ == "__main__":
     from types import SimpleNamespace
     config = {
-    "name": '0819_sk_i2v_14b_lora_thuman2.1',
+    "name": '0825_sk_i2v_14b_lora_thuman2.1',
     'train_architecture': 'lora',
     'diff_forcing': False,
     'history_guide': False,
     'learning_rate': 1e-4,
     'dataset': 'thuman',
-    'dataset_root': '/root/leinyu/data/ymzx/latent/60003/',
-    'devices': [2],
-    'lora_rank': 16,
+    'dataset_root': '/root/leinyu/data/thuman2.1/Thuman2.1_norm_render_1/latent_11',
+    'devices': [1,2,3,4,5,6,7],
+    'lora_rank': 32,
     'batch_size': 1,
     'accumulate_grad_batches': 1,
     'lora_target_modules': "q,k,v,o,ffn.0,ffn.2,k_img,v_img",

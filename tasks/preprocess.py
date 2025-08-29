@@ -4,9 +4,14 @@ from PIL import Image
 import io
 import imageio.v2 as imageio  # 使用 v2 接口，避免未来版本警告
 
-def remove_background():
+def remove_background(): 
+    '''
+    移除背景
+    背景置黑
+    pad方形
+    '''
     # 路径设置
-    input_path = '/mnt/aigc_cq/private/leinyu/code/skyreels_v2/assets/ft_local/woman_5_recloth.png'
+    input_path = '/mnt/aigc_cq/private/leinyu/code/skyreels_v2/assets/ft_local/man_1.png'
     output_path = input_path
 
     # Step 1: 去除背景（得到透明PNG）
@@ -75,6 +80,50 @@ def black_pad():
     bottom = top + target_height
     img_cropped = img.crop((left, top, right, bottom))
     img_cropped.save(image_path.replace('.png', '_cropped.png'), format='PNG')
+
+def turn_bg_white():
+    '''
+    root文件夹下是图片文件，将每个图片的背景从黑色变为白色
+    '''
+    root = 'result/i2v_1.3b_lora/0822/images'
+    
+    # 确保输出目录存在
+    output_dir = os.path.join(root, 'white_bg')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 遍历目录下的所有图片文件
+    for filename in os.listdir(root):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            input_path = os.path.join(root, filename)
+            output_path = os.path.join(output_dir, filename)
+            
+            # 打开图片
+            img = Image.open(input_path)
+            img = img.convert('RGB')
+            
+            # 获取图片数据
+            pixels = img.load()
+            width, height = img.size
+            
+            # 创建新的白色背景图片
+            new_img = Image.new('RGB', (width, height), (255, 255, 255))
+            new_pixels = new_img.load()
+            
+            # 遍历每个像素
+            for x in range(width):
+                for y in range(height):
+                    r, g, b = pixels[x, y]
+                    # 仅当像素为纯黑色或非常接近纯黑色时（阈值为1）才保持白色背景
+                    if r < 1 and g < 1 and b < 1:
+                        continue
+                    else:
+                        new_pixels[x, y] = pixels[x, y]
+            
+            # 保存转换后的图片
+            new_img.save(output_path)
+            print(f"处理完成: {filename}")
+    
+    print(f"所有图片处理完成，白色背景图片保存在: {output_dir}")
 
 if __name__ == "__main__":
     remove_background()
