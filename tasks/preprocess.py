@@ -11,37 +11,43 @@ def remove_background():
     pad方形
     '''
     # 路径设置
-    input_path = '/mnt/aigc_cq/private/leinyu/code/skyreels_v2/assets/ft_local/man_1.png'
-    output_path = input_path
+    img_root = 'assets/eval_examples_1'
+    dest_root = 'assets/eval_examples_1'
+    for img in os.listdir(img_root):
+        if img.endswith('.txt'):
+            continue
 
-    # Step 1: 去除背景（得到透明PNG）
-    with open(input_path, 'rb') as f:
-        input_data = f.read()
-    output_data = remove(input_data)
+        input_path = os.path.join(img_root,img)
+        output_path = os.path.join(dest_root,img)
 
-    # Step 2: 加载透明PNG图像
-    input_image = Image.open(io.BytesIO(output_data)).convert("RGBA")
+        # Step 1: 去除背景（得到透明PNG）
+        with open(input_path, 'rb') as f:
+            input_data = f.read()
+        output_data = remove(input_data)
 
-    # Step 3: 创建黑色背景图像
-    black_bg = Image.new("RGB", input_image.size, (0, 0, 0))  # 黑色背景
+        # Step 2: 加载透明PNG图像
+        input_image = Image.open(io.BytesIO(output_data)).convert("RGBA")
 
-    # Step 4: 将原图粘贴到黑色背景上，使用透明度作为mask
-    black_bg.paste(input_image, mask=input_image.split()[3])  # 使用 alpha 通道作为 mask
+        # Step 3: 创建黑色背景图像
+        black_bg = Image.new("RGB", input_image.size, (0, 0, 0))  # 黑色背景
 
-    # Step 5: 保存为 JPG（不带透明通道）
-    #black_bg.save(output_path, format="JPEG")
+        # Step 4: 将原图粘贴到黑色背景上，使用透明度作为mask
+        black_bg.paste(input_image, mask=input_image.split()[3])  # 使用 alpha 通道作为 mask
 
-    width, height = black_bg.size
-    target_size = max(width, height)
-    target_width, target_height = target_size, target_size
-    left = (width - target_width) / 2
-    top = (height - target_height) / 2
-    right = left + target_width
-    bottom = top + target_height
-    img_cropped = black_bg.crop((left, top, right, bottom))
-    img_cropped.save(output_path)
+        # Step 5: 保存为 JPG（不带透明通道）
+        #black_bg.save(output_path, format="JPEG")
 
-    print(f"完成，背景为黑色的图片保存在：{output_path}")
+        width, height = black_bg.size
+        target_size = max(width, height)
+        target_width, target_height = target_size, target_size
+        left = (width - target_width) / 2
+        top = (height - target_height) / 2
+        right = left + target_width
+        bottom = top + target_height
+        img_cropped = black_bg.crop((left, top, right, bottom))
+        img_cropped.save(output_path)
+
+        print(f"完成，背景为黑色的图片保存在：{output_path}")
 
 
 def slice_video():

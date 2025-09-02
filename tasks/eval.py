@@ -82,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("--fps", type=int, default=24)
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--lora_path", type=str, default=None)
     parser.add_argument(
         "--prompt",
         type=str,
@@ -129,7 +130,8 @@ if __name__ == "__main__":
         model_path=args.model_id, dit_path=args.model_id, use_usp=args.use_usp, offload=args.offload, device=args.device
     )
     from tasks.utils import load_lora
-    lora_path = 'tasks_out/train_exp/0825_sk_i2v_14b_lora_thuman2.1/lightning_lora_ckpts/lora-epoch=03-step=006000.ckpt'
+    #lora_path = 'tasks_out/train_exp/0825_sk_i2v_14b_lora_thuman2.1/lightning_lora_ckpts/lora-epoch=03-step=006000.ckpt'
+    lora_path = args.lora_path
     lora_state_dict = torch.load(lora_path, map_location="cpu") 
     load_lora(pipe.transformer, lora_state_dict)
 
@@ -164,6 +166,7 @@ if __name__ == "__main__":
 
             if local_rank == 0:
                 current_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-                video_out_file = f"{prompt_input[:100].replace('/','')}_{args.seed}_{current_time}_{args.inference_steps}_{args.guidance_scale}_{args.shift}.mp4"
+                #video_out_file = f"{prompt_input[:100].replace('/','')}_{args.seed}_{current_time}_{args.inference_steps}_{args.guidance_scale}_{args.shift}.mp4"
+                video_out_file = f"{img[:-4]}_{args.seed}_{current_time}_{args.inference_steps}_{args.guidance_scale}_{args.shift}.mp4"
                 output_path = os.path.join(save_dir, video_out_file)
                 imageio.mimwrite(output_path, video_frames, fps=args.fps, quality=8, output_params=["-loglevel", "error"])
